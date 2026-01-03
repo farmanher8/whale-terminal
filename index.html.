@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Whale Terminal V4.1 - Clean Signals</title>
+    <style>
+        /* ORIGINAL CSS FROM SOURCE */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap');
+        :root { --bg: #000; --card: #0d1117; --gold: #f3ba2f; --green: #00ff94; --red: #ff3e60; --text: #fff; --sub: #8b949e; --purple: #bf40bf; --blue: #00d4ff; --royal: #4169e1; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        .time-bar { background: #1a1a1a; padding: 4px 12px; font-size: 10px; font-family: 'JetBrains Mono'; display: flex; justify-content: space-between; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 3000; }
+        .top-ticker { background: #161b22; color: var(--gold); padding: 8px; font-size: 10px; border-bottom: 2px solid var(--gold); position: sticky; top: 22px; z-index: 2000; overflow: hidden; height: 32px; font-family: 'JetBrains Mono'; }
+        .ticker-marquee { display: inline-block; white-space: nowrap; animation: scroll-perfect 40s linear infinite; }
+        @keyframes scroll-perfect { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        
+        .sentiment-bar { background: #000; padding: 12px; border-bottom: 1px solid #333; }
+        .lg-flex { display: flex; justify-content: space-between; margin-bottom: 10px; gap: 5px; }
+        .lg-box { flex: 1; font-size: 8px; font-weight: 900; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #000; }
+        .count { background: rgba(0,0,0,0.15); color: #000; padding: 0 4px; border-radius: 3px; margin-left: 5px; }
+        .fg-box { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: bold; background: #0d1117; padding: 8px; border-radius: 8px; border: 1px solid #222; }
+        .fg-container { flex-grow: 1; height: 10px; background: linear-gradient(to right, #ff3e60, #f3ba2f, #00ff94); border-radius: 10px; position: relative; }
+        .fg-needle { position: absolute; top: -4px; height: 18px; width: 4px; background: #fff; border-radius: 10px; left: 50%; transition: left 1s; z-index: 10; }
+
+        .dashboard-stats { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .glow-card { position: relative; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #222; }
+        .glow-card::before { content: ''; position: absolute; inset: -1px; background: conic-gradient(transparent, transparent, var(--b-col, #444)); animation: rot 4s linear infinite; z-index: 1; border-radius: 20px; }
+        .investment-card::before { background: conic-gradient(var(--blue), var(--purple), var(--gold), var(--green), var(--blue)); animation: rot 2s linear infinite; }
+        .glow-card::after { content: ''; position: absolute; inset: 2px; background: var(--card); border-radius: 18px; z-index: 2; }
+        .card-inner { position: relative; z-index: 3; padding: 12px; }
+        @keyframes rot { 100% { transform: rotate(360deg); } }
+        
+        .stat-card { text-align: center; }
+        .stat-card span { font-size: 7px; color: var(--sub); display: block; margin-bottom: 3px; font-weight: 800; }
+        .full-width { grid-column: span 2; }
+        .inv-glow { font-size: 28px !important; font-weight: 900; color: #fff; }
+
+        .summary-wrapper { margin: 15px 10px; position: relative; background: #0d1117; border-radius: 15px; overflow: hidden; padding: 2px; }
+        .summary-wrapper::before { content: ''; position: absolute; inset: -100% -100%; background: conic-gradient(var(--gold), var(--blue), var(--purple), var(--gold)); animation: rot 4s linear infinite; z-index: 1; }
+        .summary-wrapper::after { content: ''; position: absolute; inset: 1.5px; background: #0d1117; border-radius: 14px; z-index: 2; }
+        .summary-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; table-layout: fixed; position: relative; z-index: 3; }
+        .summary-table th { background: #161b22; color: var(--sub); padding: 12px 0; font-size: 7.5px; border-bottom: 1px solid #333; text-align: center; }
+        .summary-table td { padding: 12px 0; border-bottom: 1px solid #1a1a1a; color: #fff; font-size: 8.5px; text-align: center; }
+        .total-row td { color: #fff !important; font-weight: 900; background: #1c1c2b !important; border-top: 1px solid #444; padding: 16px 0 !important; font-size: 9.5px !important; }
+
+        .coin-card { margin: 10px; padding: 15px !important; }
+        .coin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .tp-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 10px; margin-top: 5px; }
+        .tp-table td { padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
+        .total-target-row { background: rgba(243, 186, 47, 0.08); border-radius: 8px; margin-top: 10px; padding: 12px; border-left: 3px solid var(--gold); }
+        .moon-footer { margin-top: 10px; padding: 10px; border-radius: 10px; font-size: 10px; font-weight: 900; display: flex; justify-content: space-between; background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #4834d4; }
+
+        /* PORTFOLIO MANAGER - NEW */
+        .admin-panel { margin: 15px 10px; background: #0d1117; border: 1px dashed var(--gold); border-radius: 15px; padding: 15px; }
+        .input-row { display: flex; gap: 5px; margin-bottom: 8px; }
+        .input-row input { background: #000; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 6px; flex: 1; font-size: 10px; font-family: 'JetBrains Mono'; outline: none; }
+        .btn-main { width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; text-transform: uppercase; }
+        
+        .up { color: var(--green); } .down { color: var(--red); }
+        .pulse-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; animation: pulse-anim 1.5s infinite; }
+        @keyframes pulse-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body onload="init()">
+
+<div class="time-bar"><span id="live-date">---</span><span id="usd-pkr-live" style="color:var(--gold);">USD/PKR: ...</span><span id="live-clock">00:00:00</span></div>
+<div class="top-ticker"><div class="ticker-marquee" id="tkr-scroll">CONNECTING TO GLOBAL LIQUIDITY NODES...</div></div>
+
+<div class="sentiment-bar">
+    <div class="lg-flex">
+        <div class="lg-box" style="background:var(--blue)">BUY/ADD <span class="count" id="c-buy">0</span></div>
+        <div class="lg-box" style="background:var(--gold)">HOLDING <span class="count" id="c-hold">0</span></div>
+        <div class="lg-box" style="background:var(--purple); color:#fff;">TARGET SELL <span class="count" id="c-sell" style="color:#fff;">0</span></div>
+    </div>
+    <div class="fg-box"><span>F&G INDEX:</span><div class="fg-container"><div class="fg-needle" id="fg-ptr"></div></div><span id="fg-val" style="color:var(--gold)">--</span></div>
+</div>
+
+<div id="dashboard-area"></div>
+
+<div class="summary-wrapper">
+    <table class="summary-table">
+        <thead><tr><th>COIN</th><th>QNTY</th><th>AVRG</th><th>VALUE</th><th>P/L</th></tr></thead>
+        <tbody id="summary-body"></tbody>
+        <tbody id="summary-footer"></tbody>
+    </table>
+</div>
+
+<div class="admin-panel">
+    <div style="font-size:10px; color:var(--gold); font-weight:900; margin-bottom:10px;"> PORTFOLIO MANAGER</div>
+    <div id="input-list"></div>
+    <button class="btn-main" onclick="savePortfolio()"> SYNC PORTFOLIO</button>
+</div>
+
+<div id="card-grid"></div>
+
+<script>
+let pkrRate = 280;
+// ORIGINAL ASSETS LIST
+let portfolio = JSON.parse(localStorage.getItem('whale_v4_final')) || [
+    { n: 'RSR', b: 0.0036, q: 30000, m: 4500, t1: 0.0085, q1: 15000 },
+    { n: 'PHB', b: 0.4883, q: 400, m: 80, t1: 1.20, q1: 200 },
+    { n: 'FET', b: 0.4263, q: 350, m: 90, t1: 1.10, q1: 150 },
+    { n: 'ENA', b: 0.3881, q: 300, m: 60, t1: 0.95, q1: 140 },
+    { n: 'ONDO', b: 0.5336, q: 93, m: 18, t1: 1.30, q1: 45 },
+    { n: 'NEAR', b: 1.46, q: 25, m: 5, t1: 4.50, q1: 12 },
+    { n: 'RENDER', b: 1.25, q: 25, m: 5, t1: 3.80, q1: 12 },
+    { n: 'TIA', b: 0.46, q: 20, m: 3, t1: 1.40, q1: 10 },
+    { n: 'POL', b: 0.1521, q: 150, m: 25, t1: 0.45, q1: 75 },
+    { n: 'WLFI', b: 0.242, q: 86, m: 16, t1: 0.70, q1: 40 },
+    { n: 'NOT', b: 0.0075, q: 11808, m: 2808, t1: 0.015, q1: 5000 },
+    { n: 'DOGS', b: 0.0006, q: 108683, m: 25000, t1: 0.0015, q1: 50000 }
+];
+
+function init() {
+    renderInputs();
+    updateGlobalInfo();
+    refreshTerminal();
+    setInterval(refreshTerminal, 10000);
+    setInterval(updateClock, 1000);
+}
+
+function renderInputs() {
+    const list = document.getElementById('input-list');
+    list.innerHTML = portfolio.map((c, i) => `
+        <div class="input-row">
+            <input type="text" value="${c.n}" onchange="editP(${i},'n',this.value)" placeholder="SYMBOL">
+            <input type="number" value="${c.q}" onchange="editP(${i},'q',this.value)" placeholder="QTY">
+            <input type="number" value="${c.b}" onchange="editP(${i},'b',this.value)" placeholder="BUY">
+        </div>
+    `).join('') + `<button onclick="addAsset()" style="width:100%; background:transparent; border:1px solid #333; color:var(--sub); padding:8px; border-radius:5px; font-size:9px; margin-bottom:10px;">+ ADD COIN</button>`;
+}
+function addAsset() { portfolio.push({n:'', b:0, q:0, m:0, t1:0, q1:0}); renderInputs(); }
+function editP(i, k, v) { portfolio[i][k] = k==='n' ? v.toUpperCase() : parseFloat(v); }
+function savePortfolio() { localStorage.setItem('whale_v4_final', JSON.stringify(portfolio.filter(x => x.n !== ''))); location.reload(); }
+
+async function refreshTerminal() {
+    try {
+        const syms = portfolio.map(c => c.n).join(',');
+        const r = await fetch(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${syms}&tsyms=USD`);
+        const data = await r.json();
+
+        let tVal = 0, tInv = 0, t24h = 0, cards = '', table = '', cnt = {b:0, h:0, s:0};
+
+        portfolio.forEach(c => {
+            const raw = data.RAW[c.n].USD;
+            const live = raw.PRICE, chg = raw.CHANGEPCT24HOUR;
+            const cost = c.q * c.b, hold = c.q * live, pnl = hold - cost;
+            tVal += hold; tInv += cost; t24h += (raw.CHANGE24HOUR * c.q);
+
+            let status = (live >= (c.t1 || c.b*1.5)) ? 'TARGET SELL' : (live <= c.b * 0.95) ? 'BUY/ADD' : 'HOLDING';
+            if(status==='TARGET SELL') cnt.s++; else if(status==='BUY/ADD') cnt.b++; else cnt.h++;
+
+            table += `<tr><td>${c.n}</td><td>${c.q > 999 ? (c.q/1000).toFixed(1)+'K' : c.q}</td><td>$${c.b.toFixed(4)}</td><td>$${hold.toFixed(0)}</td><td class="${pnl>=0?'up':'down'}">${pnl.toFixed(0)}</td></tr>`;
+
+            cards += `
+            <div class="glow-card coin-card" style="--b-col:${pnl>=0?'var(--green)':'var(--red)'}">
+                <div class="card-inner">
+                    <div class="coin-grid">
+                        <div>
+                            <span style="font-size:7px; font-weight:900; color:var(--blue);">${chg>5?'ROCKET ':'STABLE '}</span>
+                            <b style="font-size:24px; color:var(--gold); display:block;">${c.n}</b>
+                            <div class="coin-status-tag" style="background:${status==='TARGET SELL'?'var(--purple)':status==='BUY/ADD'?'var(--blue)':'var(--gold)'}">${status}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <span class="${chg>=0?'up':'down'}" style="font-size:20px; font-weight:900;">$${live.toFixed(live<1?4:2)}</span>
+                            <div style="font-size:10px; font-weight:900;">VLU: $${hold.toFixed(1)}</div>
+                            <div style="font-size:9px; color:var(--sub);">${Math.round(hold*pkrRate).toLocaleString()} PKR</div>
+                        </div>
+                    </div>
+                    <div class="total-target-row">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--gold); font-weight:900; font-size:9px;">EST. GAIN</span>
+                            <span class="up" style="font-size:15px; font-weight:900;">+$${Math.round(((c.t1||c.b*1.5)-c.b)*c.q)}</span>
+                            <div style="display:flex; align-items:center;"><div class="pulse-dot" style="background:var(--blue)"></div><span style="font-size:9px;">STABLE</span></div>
+                        </div>
+                    </div>
+                    <div class="moon-footer">
+                        <span style="color:#e0b0ff">MOON BAG: ${c.m || '0'}</span>
+                        <span style="background:var(--blue); color:#000; padding:2px 8px; border-radius:4px;">SIGNAL: ${chg>=0?'BULL':'BEAR'}</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('card-grid').innerHTML = cards;
+        document.getElementById('summary-body').innerHTML = table;
+        document.getElementById('summary-footer').innerHTML = `<tr class="total-row"><td>TOTAL</td><td>-</td><td>-</td><td>$${tVal.toFixed(0)}</td><td class="${(tVal-tInv)>=0?'up':'down'}">$${(tVal-tInv).toFixed(0)}</td></tr>`;
+        document.getElementById('c-buy').innerText = cnt.b; document.getElementById('c-hold').innerText = cnt.h; document.getElementById('c-sell').innerText = cnt.s;
+        renderDashboard(tVal, tInv, t24h);
+    } catch(e){}
+}
+
+function renderDashboard(v, i, h24) {
+    const pnl = v - i;
+    document.getElementById('dashboard-area').innerHTML = `
+    <div class="dashboard-stats">
+        <div class="glow-card full-width investment-card"><div class="card-inner stat-card"><span>TOTAL INVESTMENT</span><div class="inv-glow">$${i.toFixed(2)}</div><div style="font-size:9px; color:var(--sub); font-weight:bold;">${Math.round(i*pkrRate).toLocaleString()} PKR</div></div></div>
+        <div class="glow-card" style="--b-col:var(--blue)"><div class="card-inner stat-card"><span>PORTFOLIO</span><div style="color:var(--blue); font-size:16px; font-weight:900;">$${v.toFixed(2)}</div></div></div>
+        <div class="glow-card" style="--b-col:var(--gold)"><div class="card-inner stat-card"><span>ROI %</span><div class="${pnl>=0?'up':'down'}" style="font-size:16px; font-weight:900;">${((pnl/i)*100).toFixed(2)}%</div></div></div>
+        <div class="glow-card" style="--b-col:var(--green)"><div class="card-inner stat-card"><span>NET P/L</span><div class="${pnl>=0?'up':'down'}" style="font-size:16px; font-weight:900;">$${pnl.toFixed(2)}</div></div></div>
+        <div class="glow-card" style="--b-col:var(--purple)"><div class="card-inner stat-card"><span>24H CHANGE</span><div class="${h24>=0?'up':'down'}" style="font-size:16px; font-weight:900;">$${h24.toFixed(2)}</div></div></div>
+    </div>`;
+}
+
+async function updateGlobalInfo() {
+    try {
+        const f = await fetch('https://api.alternative.me/fng/');
+        const fd = await f.json();
+        document.getElementById('fg-ptr').style.left = fd.data[0].value + '%';
+        document.getElementById('fg-val').innerText = fd.data[0].value;
+        const pkr = await fetch('https://open.er-api.com/v6/latest/USD');
+        const pkrd = await pkr.json(); pkrRate = pkrd.rates.PKR;
+        document.getElementById('usd-pkr-live').innerText = `USD/PKR: ${pkrRate.toFixed(2)}`;
+        document.getElementById('tkr-scroll').innerText = " WHALE TERMINAL ACTIVE  PREMIUM NODE CONNECTED  MONITORING GLOBAL LIQUIDITY";
+    } catch(e){}
+}
+function updateClock() { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); document.getElementById('live-date').innerText = new Date().toDateString(); }
+</script>
+</body>
+</html>
